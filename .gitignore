@@ -493,7 +493,8 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-!/fastapi-app/.env_template
+!/app/.env_template
 
 certs
 certs/jwt-private.pem
+certs/jwt-public.pem
