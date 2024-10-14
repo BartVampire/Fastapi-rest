@@ -1,6 +1,9 @@
+from pathlib import Path
+
 from pydantic import BaseModel, PostgresDsn
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+BASE_DIR = Path(__file__).parent.parent
 
 class RunConfiguration(BaseModel):
     """
@@ -38,6 +41,14 @@ class DatabaseConfig(BaseModel):
         "pk": "pk_%(table_name)s",
     }  # Правила именования таблиц в БД
 
+class AuthJWT(BaseModel):  # Конфигурация JWT токенов для аутентификации
+    # Путь к файлу с закрытым ключом
+    private_key_path: Path = BASE_DIR / "certs" / "jwt-private.pem"
+    # Путь к файлу с публичным ключом
+    public_key_path: Path = BASE_DIR / "certs" / "jwt-public.pem"
+    # Алгоритм шифрования JWT токенов (по умолчанию RS256)
+    algorithm: str = "RS256"
+
 
 class Settings(BaseSettings):
     """
@@ -53,6 +64,7 @@ class Settings(BaseSettings):
     run: RunConfiguration = RunConfiguration()  # Конфигурация запуска приложения
     api: ApiPrefix = ApiPrefix()  # Конфигурация префикса для API
     db: DatabaseConfig
+    auth: AuthJWT = AuthJWT() # Конфигурация JWT токенов для аутентификации
 
 
 settings = Settings()
