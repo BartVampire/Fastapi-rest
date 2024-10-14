@@ -494,3 +494,6 @@ cython_debug/
 #.idea/
 
 !/fastapi-app/.env_template
+
+certs
+certs/jwt-private.pem
