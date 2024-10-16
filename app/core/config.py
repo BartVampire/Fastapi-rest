@@ -5,6 +5,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = Path(__file__).parent.parent
 
+
 class RunConfiguration(BaseModel):
     """
     Конфигурация запуска приложения
@@ -41,6 +42,7 @@ class DatabaseConfig(BaseModel):
         "pk": "pk_%(table_name)s",
     }  # Правила именования таблиц в БД
 
+
 class AuthJWT(BaseModel):  # Конфигурация JWT токенов для аутентификации
     # Путь к файлу с закрытым ключом
     private_key_path: Path = BASE_DIR / "certs" / "jwt-private.pem"
@@ -48,6 +50,10 @@ class AuthJWT(BaseModel):  # Конфигурация JWT токенов для 
     public_key_path: Path = BASE_DIR / "certs" / "jwt-public.pem"
     # Алгоритм шифрования JWT токенов (по умолчанию RS256)
     algorithm: str = "RS256"
+    # Время жизни токена (по умолчанию 15 минут)
+    access_token_expires_minutes: int = 15
+    # Время жизни токена обновления (по умолчанию 30 дней)
+    refresh_token_expires_days: int = 30
 
 
 class Settings(BaseSettings):
@@ -60,11 +66,12 @@ class Settings(BaseSettings):
         case_sensitive=False,  # Разрешить любой регистр в именах полей модели
         env_nested_delimiter="__",  # Разделитель для вложенных переменных окружения
         env_prefix="FASTAPI__",  # Префикс для переменных окружения
+        extra="allow",  # Разрешить лишние переменные окружения
     )
     run: RunConfiguration = RunConfiguration()  # Конфигурация запуска приложения
     api: ApiPrefix = ApiPrefix()  # Конфигурация префикса для API
     db: DatabaseConfig
-    auth: AuthJWT = AuthJWT() # Конфигурация JWT токенов для аутентификации
+    auth: AuthJWT = AuthJWT()  # Конфигурация JWT токенов для аутентификации
 
 
 settings = Settings()

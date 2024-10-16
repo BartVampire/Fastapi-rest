@@ -495,6 +495,6 @@ cython_debug/
 
 !/app/.env_template
 
-certs
-certs/jwt-private.pem
-certs/jwt-public.pem
+app/certs
+app/certs/jwt-private.pem
+app/certs/jwt-public.pem
