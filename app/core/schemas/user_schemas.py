@@ -15,12 +15,13 @@ class UserSchema(BaseModel):
     /// email: Тип: EmailStr (строка с проверкой электронной почты). Ограничения: Минимальная длина: 4 символа, Максимальная длина: 50 символов. Пример: "ivanov@example.com".
     """
 
-    model_config = ConfigDict(strict=True)
+    # model_config = ConfigDict(strict=True)
     first_name: Annotated[
-        str, Field(min_length=2, max_length=30, examples=["Иван", "Ivan"])
+        str, Field(min_length=2, max_length=30, examples=["Иван", "Ivan"], default=None)
     ]
     last_name: Annotated[
-        str, Field(min_length=2, max_length=30, examples=["Иванов", "Ivanov"])
+        str,
+        Field(min_length=2, max_length=30, examples=["Иванов", "Ivanov"], default=None),
     ]
 
     username: Annotated[
@@ -57,7 +58,7 @@ class User(UserSchema, TimestampSchema, UUIDSchema, PersistentDeletion):
     --- tier_id (int | None): Идентификатор уровня доступа пользователя (опционально).
     """
 
-    hashed_password: str
+    hashed_password: bytes
     is_active: bool
     is_superuser: bool = False
     tier_id: int | None = None
@@ -102,7 +103,7 @@ class UserCreateInternal(UserSchema):
     --- hashed_password (str): Хэшированный пароль пользователя.
     """
 
-    hashed_password: str
+    hashed_password: bytes
 
 
 class UserUpdate(BaseModel):
@@ -125,20 +126,20 @@ class UserUpdate(BaseModel):
         str,
         Field(min_length=2, max_length=30, examples=["Иванов", "Ivanov"], default=None),
     ]
-    username: Annotated[
-        str,
-        Field(
-            min_length=3,
-            max_length=50,
-            pattern=r"^[A-Za-z0-9_-]+$",
-            examples=["userName_777"],
-            default=None,
-        ),
-    ]
+
     email: Annotated[
         EmailStr,
         Field(
             min_length=4, max_length=50, examples=["ivanov@example.com"], default=None
+        ),
+    ]
+    phone_number: Annotated[
+        str,
+        Field(
+            pattern=r"^\+\d{1,3}\d{4,14}$",  # Пример: +1234567890
+            min_length=5,
+            max_length=16,
+            examples=["+79188888888", "+79288888888"],
         ),
     ]
 
@@ -168,16 +169,7 @@ class UserTierUpdate(BaseModel):
 class UserDelete(BaseModel):
     """
     Схема для удаления пользователя.
-
-    Атрибуты:
-    --- is_deleted (bool): Флаг, указывающий, удалён ли пользователь.
-    --- deleted_at (datetime): Дата и время удаления пользователя.
     """
-
-    model_config = ConfigDict(extra="forbid")
-
-    is_deleted: bool
-    deleted_at: datetime
 
 
 class UserRestoreDeleted(BaseModel):

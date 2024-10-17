@@ -1,6 +1,6 @@
 import os
-import datetime
 import bcrypt
+from datetime import datetime, UTC, timedelta
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -14,14 +14,14 @@ def encode_jwt(
     private_key: str = settings.auth.private_key_path.read_text(),
     algorithm: str = settings.auth.algorithm,
     expire_minutes: int = settings.auth.access_token_expires_minutes,
-    expire_timedelta: datetime.timedelta | None = None,
+    expire_timedelta: timedelta | None = None,
 ):  # Функция кодирования токена JWT с использованием RS256 алгоритма
     to_encode = payload.copy()
-    now = datetime.datetime.now(datetime.UTC)
+    now = datetime.now(UTC)
     if expire_timedelta:
         expire = now + expire_timedelta
     else:
-        expire = now + datetime.timedelta(minutes=expire_minutes)
+        expire = now + timedelta(minutes=expire_minutes)
     to_encode.update(
         exp=expire,
         iat=now,

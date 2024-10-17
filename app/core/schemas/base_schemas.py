@@ -1,5 +1,5 @@
 import uuid as uuid_pkg
-import datetime
+from datetime import datetime, UTC, timezone
 from typing import Any
 
 from pydantic import BaseModel, Field, field_serializer
@@ -41,13 +41,11 @@ class TimestampSchema(BaseModel):
     --- updated_at (datetime): Дата и время последнего обновления.
     """
 
-    created_at: datetime.datetime = Field(default_factory=lambda: datetime.UTC)
-    updated_at: datetime.datetime = Field(default=None)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default=None)
 
     @field_serializer("created_at")
-    def serialize_dt(
-        self, created_at: datetime.datetime | None, _info: Any
-    ) -> str | None:
+    def serialize_dt(self, created_at: datetime | None, _info: Any) -> str | None:
         """
         Форматирует дату создания в строку формата ISO 8601. (YYYY-MM-DDTHH:MM:SSZ)
         """
@@ -58,7 +56,7 @@ class TimestampSchema(BaseModel):
 
     @field_serializer("updated_at")
     def serialize_updated_at(
-        self, updated_at: datetime.datetime | None, _info: Any
+        self, updated_at: datetime | None, _info: Any
     ) -> str | None:
         """
         Форматирует дату последнего обновления в строку формата ISO 8601. (YYYY-MM-DDTHH:MM:SSZ)
@@ -78,13 +76,11 @@ class PersistentDeletion(BaseModel):
     --- is_deleted (bool): Флаг, указывающий, удалён ли объект.
     """
 
-    deleted_at: datetime.datetime | None = Field(default=None)
+    deleted_at: datetime | None = Field(default=None)
     is_deleted: bool = False
 
     @field_serializer("deleted_at")
-    def serialize_dates(
-        self, deleted_at: datetime.datetime | None, _info: Any
-    ) -> str | None:
+    def serialize_dates(self, deleted_at: datetime | None, _info: Any) -> str | None:
         """
         Форматирует дату удаления в строку формата ISO 8601. (YYYY-MM-DDTHH:MM:SSZ)
         """

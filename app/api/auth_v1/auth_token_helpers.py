@@ -10,6 +10,7 @@ ACCESS_TOKEN_TYPE = "access_token"
 REFRESH_TOKEN_TYPE = "refresh_token"
 
 
+# Функция для создания JWT токена
 def create_jwt_token(
     token_type: str,
     payload: dict,
@@ -25,10 +26,10 @@ def create_jwt_token(
     )
 
 
+# Функция для создания JWT токена (access_token)
 def create_access_token(user: user_schemas.UserSchema) -> str:
     jwt_payload = {
         "sub": user.username,
-        "email": user.email,
     }
     return create_jwt_token(
         token_type=ACCESS_TOKEN_TYPE,
@@ -37,6 +38,7 @@ def create_access_token(user: user_schemas.UserSchema) -> str:
     )
 
 
+# Функция для создания JWT токена (refresh_token)
 def create_refresh_token(user: user_schemas.UserSchema) -> str:
     jwt_payload = {
         "sub": user.username,
