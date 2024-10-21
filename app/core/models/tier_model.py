@@ -1,6 +1,6 @@
 from datetime import datetime, UTC
 from sqlalchemy import String, DateTime
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.mixins.id_int_pk import IdIntPrimaryKeyMixin
 from .base_model import BaseModel
@@ -22,3 +22,5 @@ class Tier(BaseModel, IdIntPrimaryKeyMixin):
     updated_at: Mapped[datetime | None] = mapped_column(
         DateTime, default=None, onupdate=lambda: datetime.now(UTC)
     )
+
+    users = relationship("app.core.models.user_model.User", back_populates="tiers")

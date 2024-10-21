@@ -3,7 +3,7 @@ from datetime import datetime, UTC, timezone
 from typing import TYPE_CHECKING
 
 from sqlalchemy import String, DateTime, ForeignKey, LargeBinary
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base_model import BaseModel  # относительный импорт
 from app.core.mixins.id_int_pk import IdIntPrimaryKeyMixin
 
@@ -66,4 +66,9 @@ class User(BaseModel, IdIntPrimaryKeyMixin):
         ForeignKey("tiers.id"),
         index=True,
         default=None,
+    )
+
+    tiers = relationship("app.core.models.tier_model.Tier", back_populates="users")
+    active_tokens = relationship(
+        "app.core.models.active_token_model.ActiveToken", back_populates="users"
     )

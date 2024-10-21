@@ -92,6 +92,18 @@ class PersistentDeletion(BaseModel):
 
 
 # -------------- Токен --------------
+class TokenInfo(BaseModel):
+    access_token: str | bytes
+    refresh_token: str | bytes = None
+    token_type: str = "Bearer"
+    access_expires_at: datetime  # Добавляем время истечения
+    refresh_expires_at: datetime | None = None
+
+
+class LogoutSchema(BaseModel):
+    refresh_token: str | None = None
+
+
 class Token(BaseModel):
     """
     Схема для представления токена доступа.

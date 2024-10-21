@@ -1,3 +1,7 @@
+import logging
+from typing import Annotated
+from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import datetime
 from app.api.auth_v1.auth_token_helpers import (
     create_access_token,
     create_refresh_token,
@@ -5,67 +9,185 @@ from app.api.auth_v1.auth_token_helpers import (
 from app.api.auth_v1.validation_auth import (
     validate_auth_user,
 )
-from app.api.auth_v1.validation_auth_helper import get_current_auth_user_for_refresh
+from app.api.auth_v1.validation_auth_helper import (
+    get_current_auth_user_for_refresh,
+    oauth2_scheme,
+)
+from app.api.auth_v1 import token_crud
+from app.api.auth_v1.token_crud import add_tokens_to_db, is_token_blacklisted
+from app.auth import decode_jwt
+from app.core.models import db_helper
 from app.core.schemas import user_schemas
-from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    status,
+    Request,
+    Response,
+    Cookie,
+)
 from fastapi.security import (
     HTTPBearer,
 )
 
+from app.core.schemas.base_schemas import TokenInfo
+
 http_bearer = HTTPBearer(auto_error=False)
 
-
-class TokenInfo(BaseModel):
-    access_token: str
-    refresh_token: str | None = None
-    token_type: str = "Bearer"
-
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/jwt", tags=["auth"], dependencies=[Depends(http_bearer)])
 
 
 @router.post("/login", response_model=TokenInfo)
-def auth_user_issue_jwt(
-    user: user_schemas.UserSchema = Depends(validate_auth_user),
+async def auth_user_issue_jwt(
+    response: Response,
+    request: Request,
+    db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
+    user: user_schemas.UserSchema | user_schemas.UserRead = Depends(validate_auth_user),
+    refresh_token: str | bytes = Cookie(None),
 ):
+    if refresh_token:
+        check_token = await is_token_blacklisted(db=db, refresh_token=refresh_token)
+        if check_token is True:
+            response.delete_cookie("refresh_token")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Пожалуйста, перезапустите приложение.",
+            )
+
     access_token = create_access_token(user=user)
     refresh_token = create_refresh_token(user=user)
-    return TokenInfo(access_token=access_token, refresh_token=refresh_token)
+    access_expires_at = datetime.fromtimestamp((decode_jwt(access_token)).get("exp"))
+    refresh_expires_at = datetime.fromtimestamp((decode_jwt(refresh_token)).get("exp"))
 
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token.decode("utf-8"),
+        httponly=True,
+        secure=True,  # Для HTTPS
+        samesite="strict",
+    )
 
-@router.post("/refresh", response_model=TokenInfo, response_model_exclude_none=True)
-def auth_refresh_jwt(
-    user: user_schemas.UserSchema = Depends(get_current_auth_user_for_refresh),
-):
-    access_token = create_access_token(user=user)
+    await add_tokens_to_db(
+        db=db,
+        user=user,
+        access_token=access_token,
+        access_expires_at=access_expires_at,
+        refresh_token=refresh_token,
+        refresh_expires_at=refresh_expires_at,
+        user_agent=request.headers.get("User-Agent"),
+        ip_address=request.client.host,
+    )
+
     return TokenInfo(
         access_token=access_token,
+        refresh_token=refresh_token,
+        access_expires_at=access_expires_at,
+        refresh_expires_at=refresh_expires_at,
     )
 
 
-# from fastapi import APIRouter, Depends, Response
-# from sqlalchemy.ext.asyncio import AsyncSession
-# from ...core.db.database import async_get_db
-# from ...core.security import blacklist_token, oauth2_scheme
-#
-# router = APIRouter(tags=["login"])
-#
-#
-# @router.post("/logout")
-# async def logout(
-#     response: Response,
-#     access_token: str = Depends(oauth2_scheme),
-#     db: AsyncSession = Depends(async_get_db),
-# ) -> dict[str, str]:
-#     try:
-#         await blacklist_token(token=access_token, db=db)
-#         response.delete_cookie(key="refresh_token")
-#
-#         return {"message": "Вы вышли из аккаунта."}
-#
-#     except InvalidTokenError as e:
-#         raise HTTPException(
-#             status_code=status.HTTP_401_UNAUTHORIZED,
-#             detail="Неправильный токен.",
-#         )
+@router.post("/refresh", response_model=TokenInfo, response_model_exclude_none=True)
+async def auth_refresh_jwt(
+    request: Request,
+    response: Response,
+    db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
+    user: user_schemas.UserSchema | user_schemas.UserRead = Depends(
+        get_current_auth_user_for_refresh
+    ),
+    refresh_token: str | bytes = Cookie(None),
+):
+    try:
+        print(f"{refresh_token}")
+        if refresh_token:
+            check_token = await is_token_blacklisted(db=db, refresh_token=refresh_token)
+            print(f"{check_token}")
+            if check_token is True:
+                response.delete_cookie("refresh_token")
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Пожалуйста, авторизуйтесь.",
+                )
+
+        if not refresh_token:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Не передан токен для обновления.",
+            )
+
+        access_token = create_access_token(user=user)
+        access_expires_at = datetime.fromtimestamp(
+            (decode_jwt(access_token)).get("exp")
+        )
+        refresh_expires_at = datetime.fromtimestamp(
+            (decode_jwt(refresh_token)).get("exp")
+        )
+        print(f"{access_expires_at}, {refresh_expires_at}")
+        await add_tokens_to_db(
+            db=db,
+            user=user,
+            access_token=access_token,
+            access_expires_at=access_expires_at,
+            refresh_token=refresh_token.encode("utf-8"),
+            refresh_expires_at=refresh_expires_at,
+            user_agent=request.headers.get("User-Agent"),
+            ip_address=request.client.host,
+        )
+        return TokenInfo(
+            access_token=access_token,
+            access_expires_at=access_expires_at,
+            refresh_expires_at=refresh_expires_at,
+        )
+
+    except Exception as e:
+        print(e)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Неправильный токен для обновления.",
+        )
+
+
+@router.post("/logout")
+async def logout(
+    response: Response,
+    access_token: Annotated[str, Depends(oauth2_scheme)],
+    db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
+    refresh_token: str = Cookie(None),
+):
+    try:
+        if access_token:
+            access_token = access_token.encode("utf-8")
+        access_expires_at = datetime.fromtimestamp(
+            (decode_jwt(access_token)).get("exp")
+        )
+        username = (decode_jwt(access_token)).get("sub")
+        if refresh_token:
+            refresh_token = refresh_token.encode("utf-8")
+        refresh_expires_at = datetime.fromtimestamp(
+            (decode_jwt(refresh_token)).get("exp")
+        )
+
+        check_token = await is_token_blacklisted(
+            db=db, refresh_token=refresh_token, access_token=access_token
+        )
+        if check_token is False:
+            # Добавляем оба токена в черный список
+            await token_crud.add_tokens_to_blacklist(
+                db=db,
+                access_token=access_token,
+                refresh_token=refresh_token,
+                access_expires_at=access_expires_at,
+                refresh_expires_at=refresh_expires_at,
+                username=username,
+            )
+
+        response.delete_cookie("refresh_token")
+        response.headers["Authorization"] = "Bearer " + "Hello, world!"
+        return {"message": "Successfully logged out"}
+    except Exception as e:
+        print(e)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Вы уже вышли из системы."
+        )

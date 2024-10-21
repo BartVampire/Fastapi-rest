@@ -16,7 +16,7 @@ def create_jwt_token(
     payload: dict,
     expire_minutes: int = settings.auth.access_token_expires_minutes,
     expire_timedelta: datetime.timedelta | None = None,
-) -> str:
+) -> bytes:
     jwt_payload = {TOKEN_TYPE_FIELD: token_type}
     jwt_payload.update(payload)
     return utils_jwt.encode_jwt(
@@ -27,7 +27,7 @@ def create_jwt_token(
 
 
 # Функция для создания JWT токена (access_token)
-def create_access_token(user: user_schemas.UserSchema) -> str:
+def create_access_token(user: user_schemas.UserSchema) -> bytes:
     jwt_payload = {
         "sub": user.username,
     }
@@ -39,7 +39,7 @@ def create_access_token(user: user_schemas.UserSchema) -> str:
 
 
 # Функция для создания JWT токена (refresh_token)
-def create_refresh_token(user: user_schemas.UserSchema) -> str:
+def create_refresh_token(user: user_schemas.UserSchema) -> bytes:
     jwt_payload = {
         "sub": user.username,
     }
