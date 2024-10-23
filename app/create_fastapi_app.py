@@ -92,6 +92,7 @@ def register_static_docs_routes(app: FastAPI):
 
 def create_app(
     create_custom_static_urls: bool = False,
+    middleware: list = None,
 ) -> FastAPI:
     """
     Создает и настраивает экземпляр приложения FastAPI с опциональной регистрацией статических роутеров документации.
@@ -100,6 +101,9 @@ def create_app(
     create_custom_static_urls (bool): Определяет, следует ли зарегистрировать статические роутеры документации.
         Если True, то регистрируются статические роутеры документации Swagger UI и ReDoc.
         Если False (по умолчанию), то документация Swagger UI и ReDoc не регистрируются.
+
+    middleware (list): Список middleware для добавления в приложение.
+
 
     Возвращает:
     FastAPI: Экземпляр приложения FastAPI с настроенными параметрами и, при необходимости, зарегистрированными статическими роутерами документации.
@@ -114,6 +118,7 @@ def create_app(
         redoc_url=(
             None if create_custom_static_urls else "/redoc"
         ),  # Не показывать ReDoc по умолчанию
+        middleware=middleware,
     )  # Инициализация FastAPI
 
     if create_custom_static_urls:

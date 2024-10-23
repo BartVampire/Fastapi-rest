@@ -24,3 +24,6 @@ class Tier(BaseModel, IdIntPrimaryKeyMixin):
     )
 
     users = relationship("app.core.models.user_model.User", back_populates="tiers")
+
+    def __str__(self):
+        return f'ID: "{self.id}" | Название: "{self.name}"'

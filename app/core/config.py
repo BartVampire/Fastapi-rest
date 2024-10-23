@@ -1,7 +1,11 @@
+import os
 from pathlib import Path
 
-from pydantic import BaseModel, PostgresDsn
+from dotenv import load_dotenv
+from pydantic import BaseModel, PostgresDsn, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+load_dotenv()
 
 BASE_DIR = Path(__file__).parent.parent
 
@@ -28,7 +32,7 @@ class DatabaseConfig(BaseModel):
     Конфигурация базы данных
     """
 
-    url: PostgresDsn
+    url: PostgresDsn = Field(default=os.getenv("FASTAPI__DB__URL"))
     echo: bool = False  # Логирование SQL-запросов в консоль
     echo_pool: bool = False  # Выводить логирование пула соединений
     pool_size: int = 50  # Размер количества соединений в пуле
@@ -70,7 +74,7 @@ class Settings(BaseSettings):
     )
     run: RunConfiguration = RunConfiguration()  # Конфигурация запуска приложения
     api: ApiPrefix = ApiPrefix()  # Конфигурация префикса для API
-    db: DatabaseConfig
+    db: DatabaseConfig = DatabaseConfig()
     auth: AuthJWT = AuthJWT()  # Конфигурация JWT токенов для аутентификации
 
 

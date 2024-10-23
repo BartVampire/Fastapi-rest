@@ -72,3 +72,6 @@ class User(BaseModel, IdIntPrimaryKeyMixin):
     active_tokens = relationship(
         "app.core.models.active_token_model.ActiveToken", back_populates="users"
     )
+
+    def __str__(self):
+        return f'ID: "{self.id}" | Имя пользователя: "{self.username}" | Электронная почта: "{self.email}"'
