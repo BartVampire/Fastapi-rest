@@ -16,6 +16,7 @@ bcrypt = "^4.2.0"
 python-multipart = "^0.0.12"
 sqladmin = "^0.20.0"
 redis = "^5.2.0"
+fastapi-limiter = "^0.1.6"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.8.0"

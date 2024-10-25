@@ -1,10 +1,10 @@
 from functools import lru_cache
 
 from fastapi import Depends
-from redis import Redis, ConnectionPool
 from typing import Optional
 from .config import Settings
 import logging
+from redis.asyncio import Redis as AsyncRedis, ConnectionPool as AsyncConnectionPool
 
 logger = logging.getLogger(__name__)
 
@@ -12,14 +12,14 @@ logger = logging.getLogger(__name__)
 class RedisClient:
     """Класс для работы с Redis"""
 
-    _instance: Optional[Redis] = None  # Экземпляр клиента Redis
-    _pool: Optional[ConnectionPool] = None  # Пул соединений с Redis
+    _instance: Optional[AsyncRedis] = None  # Экземпляр клиента Redis
+    _pool: Optional[AsyncConnectionPool] = None  # Пул соединений с Redis
 
     @classmethod
-    def init_pool(cls, settings: Settings) -> None:
+    async def init_pool(cls, settings: Settings):
         """Инициализация пула соединений"""
         if cls._pool is None:  # Проверка, инициализирован ли пул
-            cls._pool = ConnectionPool(
+            cls._pool = AsyncConnectionPool(
                 host=settings.redis.host,  # Хост Redis-сервера
                 port=settings.redis.port,  # Порт Redis-сервера
                 db=settings.redis.db,  # Номер базы данных Redis
@@ -39,17 +39,17 @@ class RedisClient:
             )
 
     @classmethod
-    def get_client(cls, settings: Settings) -> Redis:
+    async def get_client(cls, settings: Settings) -> AsyncRedis:
         """Получить клиент Redis"""
         if cls._instance is None:  # Проверка, создан ли экземпляр клиента
             if cls._pool is None:  # Если пул не инициализирован, инициализируем его
-                cls.init_pool(settings)
-            cls._instance = Redis(
+                await cls.init_pool(settings)
+            cls._instance = AsyncRedis(
                 connection_pool=cls._pool, decode_responses=True
             )  # Создание клиента Redis
             # Проверка соединения
             try:
-                cls._instance.ping()  # Проверка доступности Redis
+                await cls._instance.ping()  # Проверка доступности Redis
                 logger.info("Успешное подключение к Redis")
             except Exception as e:  # Обработка ошибок при подключении
                 logger.error(f"Ошибка при подключении к Redis: {e}")
@@ -57,13 +57,13 @@ class RedisClient:
         return cls._instance  # Возвращаем экземпляр клиента
 
     @classmethod
-    def close(cls) -> None:
+    async def close(cls) -> None:
         """Закрыть соединение с Redis"""
         if cls._instance is not None:  # Проверка, существует ли экземпляр клиента
-            cls._instance.close()  # Закрытие соединения с Redis
+            await cls._instance.close()  # Закрытие соединения с Redis
             cls._instance = None  # Обнуление экземпляра
         if cls._pool is not None:  # Проверка, существует ли пул соединений
-            cls._pool.disconnect()  # Отключение пула соединений
+            await cls._pool.disconnect()  # Отключение пула соединений
             cls._pool = None  # Обнуление пула
         print(f"Закрытие соединения с Redis ... :D")
         logger.info("Закрытие соединения с Redis")
@@ -74,5 +74,5 @@ def get_settings() -> Settings:
     return Settings()
 
 
-def get_redis(settings: Settings = Depends(get_settings)) -> Redis:
-    return RedisClient.get_client(settings)
+async def get_redis(settings: Settings = Depends(get_settings)) -> AsyncRedis:
+    return await RedisClient.get_client(settings)

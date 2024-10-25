@@ -9,16 +9,30 @@ services:
     ports:
       - "5432:5432"
 
-  adminer:
-    image: adminer
+  redis:
+    image: redis
+    container_name: redis_fastapi_test
+    command: [ "redis-server", "--requirepass", "password" ]  # Укажите пароль напрямую
     ports:
-      - "8080:8080"
+      - "6379:6379"
+    restart: on-failure
+    depends_on:
+      - pg
 
-  pgadmin:
-    image: dpage/pgadmin4
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.org
-      PGADMIN_DEFAULT_PASSWORD: admin
-      PGADMIN_CONFIG_SERVER_MODE: 'False'
-    ports:
-      - "5050:80"
+
+
+
+
+#  adminer:
+#    image: adminer
+#    ports:
+#      - "8080:8080"
+#
+#  pgadmin:
+#    image: dpage/pgadmin4
+#    environment:
+#      PGADMIN_DEFAULT_EMAIL: admin@admin.org
+#      PGADMIN_DEFAULT_PASSWORD: admin
+#      PGADMIN_CONFIG_SERVER_MODE: 'False'
+#    ports:
+#      - "5050:80"

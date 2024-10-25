@@ -54,8 +54,8 @@ class RedisConfig(BaseModel):
     """
 
     host: str = os.getenv("FASTAPI__REDIS__HOST", "localhost")  # Хост Redis-сервера,
-    port: int = os.getenv("FASTAPI__REDIS__PORT", 6379)  # Порт Redis-сервера
-    db: int = os.getenv("FASTAPI__REDIS__DB", 0)  # Номер базы данных Redis
+    port: int = int(os.getenv("FASTAPI__REDIS__PORT", 6379))  # Порт Redis-сервера
+    db: int = int(os.getenv("FASTAPI__REDIS__DB", 0))  # Номер базы данных Redis
     password: str | None = os.getenv(
         "FASTAPI__REDIS__PASSWORD"
     )  # Пароль для подключения к Redis
