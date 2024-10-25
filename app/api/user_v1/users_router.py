@@ -25,6 +25,7 @@ def auth_user_check_self_info(
     payload: Annotated[dict, Depends(get_current_token_payload)],
     user: Annotated[user_schemas.UserRead, Depends(get_current_active_auth_user)],
 ):
+    """Получение информации о пользователе"""
     iat_ts = datetime.fromtimestamp(timestamp=payload.get("iat"))
     iat = iat_ts.strftime("%H:%M:%S - %d.%m.%Y")
     return {
@@ -46,6 +47,7 @@ async def auth_user_register(
     user: user_schemas.UserCreate,
     db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
 ):
+    """Регистрация нового пользователя"""
     db_user_email = await crud_user.get_user_by_field(
         db=db, field="email", value=user.email
     )
@@ -71,6 +73,7 @@ async def auth_user_update(
     current_user: Annotated[user_model.User, Depends(get_current_active_auth_user)],
     db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
 ):
+    """Обновление информации о пользователе"""
     db_user = await crud_user.get_user(db=db, user_uuid=user_id)
     if db_user is None:
         raise HTTPException(
@@ -93,6 +96,7 @@ async def delete_user(
     user_uuid: uuid.UUID,
     db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
 ):
+    """Удаление пользователя"""
     user = await crud_user.get_user(db=db, user_uuid=user_uuid)
     if user is None:
         raise HTTPException(
