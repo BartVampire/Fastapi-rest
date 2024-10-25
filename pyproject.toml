@@ -15,6 +15,7 @@ pyjwt = {extras = ["crypto"], version = "^2.9.0"}
 bcrypt = "^4.2.0"
 python-multipart = "^0.0.12"
 sqladmin = "^0.20.0"
+redis = "^5.2.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.8.0"

@@ -7,6 +7,8 @@ from fastapi.openapi.docs import (
     get_swagger_ui_html,
     get_swagger_ui_oauth2_redirect_html,
 )
+
+from app.core.redis import RedisClient, get_settings
 from core.models import db_helper
 
 
@@ -24,9 +26,16 @@ async def lifespan(app: FastAPI):
     """
 
     # Запуск приложения
+
+    # Инициализируем пул соединений при запуске
+    RedisClient.init_pool(get_settings())
+
     yield
     # Остановка приложения
+
     print("Завершение приложения... stopping server... Done!  :D")
+    # Закрываем соединения при остановке
+    RedisClient.close()
     await db_helper.dispose()  # Закрытие соединения с базой данных
 
 
