@@ -9,9 +9,8 @@ from app.api.auth_v1.auth_token_helpers import (
 from app.api.auth_v1.validation_auth import (
     validate_auth_user,
 )
-from app.api.auth_v1.validation_auth_helper import (
+from app.api.auth_v1.validation_auth_helper_refresh import (
     get_current_auth_user_for_refresh,
-    oauth2_scheme,
 )
 from app.api.auth_v1 import token_crud
 from app.api.auth_v1.token_crud import add_tokens_to_db, is_token_blacklisted
@@ -48,19 +47,31 @@ async def auth_user_issue_jwt(
     user: user_schemas.UserSchema | user_schemas.UserRead = Depends(validate_auth_user),
     refresh_token: str | bytes = Cookie(None),
 ):
-    if refresh_token:
-        check_token = await is_token_blacklisted(db=db, refresh_token=refresh_token)
-        if check_token is True:
-            response.delete_cookie("refresh_token")
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Пожалуйста, перезапустите приложение.",
-            )
+    if refresh_token and await is_token_blacklisted(db=db, refresh_token=refresh_token):
+        response.delete_cookie("refresh_token")
+        response.delete_cookie("access_token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Пожалуйста, перезапустите приложение.",
+        )
 
     access_token = create_access_token(user=user)
     refresh_token = create_refresh_token(user=user)
+
     access_expires_at = datetime.fromtimestamp((decode_jwt(access_token)).get("exp"))
     refresh_expires_at = datetime.fromtimestamp((decode_jwt(refresh_token)).get("exp"))
+
+    response.set_cookie(
+        key="access_token",
+        value=access_token.decode("utf-8"),
+        httponly=True,  # Запрещает доступ к cookie через JavaScript
+        secure=True,  # Для HTTPS
+        samesite="strict",  # Значения: "lax", "strict", "none"
+        # samesite - "lax": cookie отправляются при переходе на сайт извне
+        # samesite - "strict": cookie отправляются только при переходах внутри сайта
+        # samesite - "none": cookie отправляются всегда (требует secure=True)
+        max_age=7200,  # Время жизни cookie в секундах (2 часа),
+    )
 
     response.set_cookie(
         key="refresh_token",
@@ -68,6 +79,7 @@ async def auth_user_issue_jwt(
         httponly=True,
         secure=True,  # Для HTTPS
         samesite="strict",
+        max_age=30 * 24 * 3600,  # Время жизни cookie в секундах (30 дней),
     )
 
     await add_tokens_to_db(
@@ -80,7 +92,6 @@ async def auth_user_issue_jwt(
         user_agent=request.headers.get("User-Agent"),
         ip_address=request.client.host,
     )
-
     return TokenInfo(
         access_token=access_token,
         refresh_token=refresh_token,
@@ -135,6 +146,16 @@ async def auth_refresh_jwt(
             user_agent=request.headers.get("User-Agent"),
             ip_address=request.client.host,
         )
+
+        response.set_cookie(
+            key="access_token",
+            value=access_token.decode("utf-8"),
+            httponly=True,
+            secure=True,  # Для HTTPS
+            samesite="strict",
+            max_age=1800,  # Время жизни cookie в секундах (30 минут),
+        )
+
         return TokenInfo(
             access_token=access_token,
             access_expires_at=access_expires_at,
@@ -152,9 +173,10 @@ async def auth_refresh_jwt(
 @router.post("/logout")
 async def logout(
     response: Response,
-    access_token: Annotated[str, Depends(oauth2_scheme)],
+    # access_token: Annotated[str, Depends(oauth2_scheme)],
     db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
-    refresh_token: str = Cookie(None),
+    refresh_token: str | bytes = Cookie(None),
+    access_token: str | bytes = Cookie(None),
 ):
     try:
         if access_token:
@@ -184,6 +206,7 @@ async def logout(
             )
 
         response.delete_cookie("refresh_token")
+        response.delete_cookie("access_token")
         response.headers["Authorization"] = "Bearer " + "Hello, world!"
         return {"message": "Successfully logged out"}
     except Exception as e:
