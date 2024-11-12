@@ -31,9 +31,7 @@ class Restaurant(BaseModel, IdIntPrimaryKeyMixin):
     is_active: Mapped[bool] = mapped_column(
         default=True, index=True
     )  # Статус активности ресторана
-    phone: Mapped[str | None] = mapped_column(
-        String(20), nullable=True
-    )
+    phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
