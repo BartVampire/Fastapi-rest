@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}
+	{{ restaurant.name }}
+{% endblock %}
+
+{% block css_styles %}
+
+{% endblock %}
+
+{% block body %}
+    <div class="hero_area">
+    {% include "includes/header-section.html" %}
+    {% include "includes/slider-section.html" %}
+    </div>
+    {% include 'includes/menu-section.html' %}
+    {% include 'includes/about-us-section.html' %}
+    {% include 'includes/booking-section.html' %}
+    {% include 'includes/footer-section.html' %}
+
+{% endblock %}
+
+
+{% block js_scripts %}
+
+{% endblock %}

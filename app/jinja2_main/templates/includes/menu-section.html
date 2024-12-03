@@ -1,0 +1,118 @@
+ <!-- Секция меню -->
+
+<section class="food_section layout_padding-bottom">
+    <div class="container">
+        <div class="heading_container heading_center" style="margin-top: 25px;">
+            <h2>Наше меню</h2>
+        </div>
+
+        <!-- Фильтр по категориям -->
+        <ul class="filters_menu">
+            <li class="{{ 'active' if not pagination.current_category else '' }}">
+                <a href="?restaurant_uuid={{ restaurant_uuid }}&page=1" class="filter-link">Все продукты</a>
+            </li>
+            {% for category in categories %}
+            <li class="{{ 'active' if pagination.current_category == category.slug else '' }}">
+                <a href="?restaurant_uuid={{ restaurant_uuid }}&page=1&category_filter={{ category.slug }}" class="filter-link">
+                    {{ category.name }}
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+
+            <!-- Содержимое категорий -->
+        <div class="filters-content">
+            <div class="row grid" style="min-height: 490px;">
+                {% for product in products %}
+                <div class="col-sm-6 col-lg-4 all">
+                    <div class="box">
+                        <div>
+                            <div class="img-box">
+                                <img src="{{ product.image_url or url_for('static', path='images/f1.png') }}" alt="{{ product.name }}" />
+                            </div>
+                            <div class="detail-box">
+                                <h5>{{ product.name }}</h5>
+                                <p>{{ product.description or "Описание отсутствует" }}</p>
+                                <div class="options">
+                                    <h6>
+                                        {{ product.portions[0].price if product.portions else 'N/A' }} руб.
+                                    </h6>
+                                    <button type="button" class="custom-btn-menu" data-bs-toggle="modal" data-bs-target="#portionsModal{{ product.id }}">
+                                        Посмотреть порции
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Модальное окно для порций -->
+            <div class="modal fade" id="portionsModal{{ product.id }}"
+                 tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                Выберите порцию для {{ product.name }}
+                            </h5>
+                            <button type="button" class="btn-close"
+                                    data-bs-dismiss="modal" aria-label="Close">
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            {% if product.portions %}
+                            <ul class="list-group">
+                                {% for portion in product.portions %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    {{ portion.name }} ({{ portion.size }} {{ portion.unit_type }})
+                                    {% if portion.is_available %}
+                                    <span class="badge bg-success rounded-pill">В наличии</span>
+                                    {% else %}
+                                    <span class="badge bg-danger rounded-pill">Нет в наличии</span>
+                                    {% endif %}
+                                    <span class="badge bg-primary rounded-pill">
+                                        {{ portion.price }} руб.
+                                    </span>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                            {% else %}
+                            <p>Нет доступных порций для этого продукта.</p>
+                            {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Пагинация -->
+        <div class="pagination justify-content-center mt-4">
+            <nav aria-label="Навигация по продуктам">
+                <ul class="pagination">
+                    {% if pagination.page > 1 %}
+                    <li class="page-item">
+                        <a class="page-link" href="?restaurant_uuid={{ restaurant_uuid }}&page={{ pagination.page - 1 }}&page_size={{ pagination.page_size }}">Предыдущая</a>
+                    </li>
+                    {% endif %} {% for page in range(1, pagination.total_pages + 1) %}
+                    <li class="page-item {{ 'active' if page == pagination.page else '' }}">
+                        <a class="page-link" href="?restaurant_uuid={{ restaurant_uuid }}&page={{ page }}&page_size={{ pagination.page_size }}">{{ page }}</a>
+                    </li>
+                    {% endfor %} {% if pagination.page < pagination.total_pages %}
+                    <li class="page-item">
+                        <a class="page-link" href="?restaurant_uuid={{ restaurant_uuid }}&page={{ pagination.page + 1 }}&page_size={{ pagination.page_size }}">Следующая</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+
+{#        <div class="btn-box text-center mt-3">#}
+{#            <p>Показано {{ pagination.page_size }} из {{ pagination.total_products }} продуктов</p>#}
+{#        </div>#}
+    </div>
+</section>
+
+
+  <!-- end food section -->
