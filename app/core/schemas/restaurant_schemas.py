@@ -1,7 +1,10 @@
-import uuid as uuid_pkg
+from uuid import UUID
 from datetime import datetime
-from typing import Optional
-from pydantic import BaseModel, Field
+from typing import Optional, TYPE_CHECKING, List
+from pydantic import BaseModel, Field, ConfigDict
+
+
+from app.core.schemas.product_schemas import Product
 
 
 class RestaurantBase(BaseModel):
@@ -9,6 +12,13 @@ class RestaurantBase(BaseModel):
     description: Optional[str] = Field(None, description="Описание ресторана")
     address: Optional[str] = Field(None, max_length=200, description="Адрес ресторана")
     is_active: bool = Field(default=True, description="Статус активности ресторана")
+    phone: Optional[str] = Field(
+        max_length=20, min_length=5, description="Номер телефона"
+    )
+    image_url: Optional[str] = Field(
+        description="URL изображения продукта", default=None
+    )  # URL изображения
+    products: List["Product"] = Field(..., description="Список продуктов")
 
 
 class RestaurantCreate(RestaurantBase):
@@ -21,8 +31,8 @@ class RestaurantUpdate(RestaurantBase):
 
 class Restaurant(RestaurantBase):
     id: int = Field(..., description="ID ресторана")
-    uuid: uuid_pkg = Field(..., description="UUID ресторана")
+    uuid: UUID = Field(..., description="UUID ресторана")
     created_at: datetime = Field(..., description="Дата создания")
-
-    class Config:
-        from_attributes = True
+    products: List["Product"] = Field(..., description="Список продуктов")
+    slug: str = Field(..., description="Слаг ресторана")
+    model_config = ConfigDict(arbitrary_types_allowed=True)

@@ -3,9 +3,12 @@ from typing import Optional
 
 
 class CategoryBase(BaseModel):
-    name: str = Field(..., max_length=100, description="Название категории")
+    """Базовая схема для категории"""
+
+    name: str = Field(
+        ..., min_length=2, max_length=100, description="Название категории"
+    )
     description: Optional[str] = Field(None, description="Описание категории")
-    parent_id: Optional[int] = Field(None, description="ID родительской категории")
 
 
 class CategoryCreate(CategoryBase):
@@ -14,3 +17,14 @@ class CategoryCreate(CategoryBase):
 
 class CategoryUpdate(CategoryBase):
     pass
+
+
+class CategoryInit(CategoryBase):
+    id: int = Field(..., description="ID категории")
+    slug: str = Field(..., description="Слаг категории")
+
+    class Config:
+        """Класс конфигурации"""
+
+        # Позволяет использовать поля модели
+        from_attributes = True

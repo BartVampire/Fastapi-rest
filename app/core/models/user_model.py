@@ -1,6 +1,6 @@
 import uuid as uuid_pkg
 from datetime import datetime, UTC, timezone
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 from sqlalchemy import String, DateTime, ForeignKey, LargeBinary
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -9,6 +9,7 @@ from app.core.mixins.id_int_pk import IdIntPrimaryKeyMixin
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
+    from app.core.models.restaurant_model import Restaurant
 
 
 class User(BaseModel, IdIntPrimaryKeyMixin):
@@ -32,6 +33,9 @@ class User(BaseModel, IdIntPrimaryKeyMixin):
     .tier_id: Mapped[int | None] - Идентификатор уровня доступа пользователя, который ссылается на другую таблицу tier. Это поле может быть None, если у пользователя нет уровня доступа. Поле индексируется для ускорения поиска.
     """
 
+    uuid: Mapped[uuid_pkg.UUID] = mapped_column(
+        default=uuid_pkg.uuid4, primary_key=False, unique=True
+    )
     first_name: Mapped[str] = mapped_column(String(30), nullable=True)
     last_name: Mapped[str] = mapped_column(String(30), nullable=True)
     username: Mapped[str] = mapped_column(String(50), unique=True, index=True)
@@ -40,10 +44,6 @@ class User(BaseModel, IdIntPrimaryKeyMixin):
         String(25), nullable=True, unique=True, index=True
     )
     hashed_password: Mapped[bytes] = mapped_column(LargeBinary)
-
-    uuid: Mapped[uuid_pkg.UUID] = mapped_column(
-        default=uuid_pkg.uuid4, primary_key=True, unique=True
-    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
@@ -71,6 +71,9 @@ class User(BaseModel, IdIntPrimaryKeyMixin):
     tiers = relationship("app.core.models.tier_model.Tier", back_populates="users")
     active_tokens = relationship(
         "app.core.models.active_token_model.ActiveToken", back_populates="users"
+    )
+    restaurants: Mapped[List["Restaurant"]] = relationship(
+        "Restaurant", back_populates="owner"
     )
 
     def __str__(self):

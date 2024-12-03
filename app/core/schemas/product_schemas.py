@@ -1,14 +1,11 @@
 from datetime import datetime
-from typing import List, TYPE_CHECKING
+from typing import List, TYPE_CHECKING, Optional
 
 from pydantic import BaseModel, Field, field_validator
-from app.core.models.product_model import MeasurementType
 
-if TYPE_CHECKING:
-    from app.core.models.category_model import Category
-    from app.core.models.restaurant_model import Restaurant
-    from app.core.models.product_size_model import ProductSize
-    from app.core.models.product_variation_model import ProductVariation
+
+from app.core.schemas.category_schemas import CategoryInit
+from app.core.schemas.product_size_schemas import PortionSize, PortionSizeCreate
 
 
 class ProductBase(BaseModel):
@@ -21,35 +18,44 @@ class ProductBase(BaseModel):
         examples=["Хинкали"],
         description="Название продукта",
     )  # Название продукта
-    description: [str | None] = Field(
+    description: Optional[str] = Field(
         description="Описание продукта", default=None
     )  # Описание
-    base_price: float = Field(..., gt=0, description="Базовая цена продукта")
-    measurement_type: MeasurementType = Field(
-        ...,
-        description="Тип измерения продукта",
-    )  # Тип измерения
-    restaurant_id: int = (Field(..., description="ID ресторана"),)
-    is_available: bool = Field(..., description="Доступность продукта")
+    image_url: Optional[str] = Field(
+        description="URL изображения продукта", default=None
+    )  # URL изображения
 
-    @field_validator("base_price")
-    def validate_price(self, v):
-        """Проверка, что цена положительная"""
-        if v <= 0:
-            raise ValueError("Цена должна быть положительная")
-        return v
+    restaurant_id: int = Field(..., description="ID ресторана")
+    category_id: Optional[int] = Field(
+        description="ID категории", default=None
+    )  # ID категории
+
+    # @field_validator("base_price")
+    # def validate_price(self, v):
+    #     """Проверка, что цена положительная"""
+    #     if v <= 0:
+    #         raise ValueError("Цена должна быть положительная")
+    #     return v
 
 
 class ProductCreate(ProductBase):
     """Схема для создания продукта"""
 
-    category_ids: List[int] = Field(..., description="Список ID категорий")
+    pass
+
+
+class ProductCreateWithPortions(ProductBase):
+    """Схема для создания продукта с порциями"""
+
+    portions: List["PortionSizeCreate"] = Field(
+        ..., description="Варианты порций продукта"
+    )
 
 
 class ProductUpdate(ProductBase):
     """Схема для обновления продукта"""
 
-    category_ids: List[int] = Field(..., description="Список ID категорий")
+    pass
 
 
 class Product(ProductBase):
@@ -57,12 +63,12 @@ class Product(ProductBase):
 
     id: int = Field(..., description="ID продукта")
     created_at: datetime = Field(..., description="Дата создания")
-    restaurant: Restaurant = Field(..., description="Информация о ресторане")
-    categories: List[Category] = Field(default=[], description="Категории продукта")
-    variations: List[ProductVariation] = Field(
-        default=[], description="Вариации продукта"
-    )
-    sizes: List[ProductSize] = Field(default=[], description="Размеры продукта")
+    restaurant_id: int = Field(..., description="ID ресторана")
+    # categories: List["CategoryInit"] = Field(
+    #     default=[], description="Категории продукта"
+    # )
+    category_id: Optional[int] = Field(..., description="ID категории")
+    portions: List["PortionSize"] = Field(default=[], description="Порции продукта")
 
     class Config:
         """Класс конфигурации"""

@@ -21,7 +21,11 @@ class CRUDUser:
                 select(user_model.User).where(user_model.User.email == value)
             )
             return result.scalars().first()
-
+        if field == "id":
+            result = await db.execute(
+                select(user_model.User).where(user_model.User.id == value)
+            )
+            return result.scalars().first()
         if field == "username":
             result = await db.execute(
                 select(user_model.User).where(user_model.User.username == value)
