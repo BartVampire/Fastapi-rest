@@ -35,8 +35,6 @@ async def get_current_token_payload(
 ) -> user_schemas.User | RedirectResponse:
     try:
         _, access_token = access_token
-        print(f"access_token: get_current_token {access_token}")
-        print(f"refresh_token: get_current_token {refresh_token}")
         if not access_token and not refresh_token:
             # Выбрасываем исключение, чтобы на уровне маршрута выполнить редирект
             raise HTTPException(
@@ -44,7 +42,6 @@ async def get_current_token_payload(
             )
 
         payload = utils_jwt.decode_jwt(token=access_token)
-        print(f"payload: {payload}")
         return payload
 
     except InvalidTokenError as e:

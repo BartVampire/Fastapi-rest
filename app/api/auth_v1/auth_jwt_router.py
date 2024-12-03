@@ -111,10 +111,8 @@ async def auth_refresh_jwt(
     refresh_token: str | bytes = Cookie(None),
 ):
     try:
-        print(f"{refresh_token}")
         if refresh_token:
             check_token = await is_token_blacklisted(db=db, refresh_token=refresh_token)
-            print(f"{check_token}")
             if check_token is True:
                 response.delete_cookie("refresh_token")
                 raise HTTPException(

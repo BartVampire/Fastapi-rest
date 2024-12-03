@@ -18,15 +18,15 @@ class RestaurantBase(BaseModel):
     image_url: Optional[str] = Field(
         description="URL изображения продукта", default=None
     )  # URL изображения
-    products: List["Product"] = Field(..., description="Список продуктов")
+    # products: List["Product"] = Field(..., description="Список продуктов")
 
 
 class RestaurantCreate(RestaurantBase):
-    pass
+    owner_id: Optional[int] = Field(description="Идентификатор владельца ресторана")
 
 
 class RestaurantUpdate(RestaurantBase):
-    pass
+    owner_id: Optional[int] = Field(description="Идентификатор владельца ресторана")
 
 
 class Restaurant(RestaurantBase):

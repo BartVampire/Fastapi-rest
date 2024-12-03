@@ -8,8 +8,10 @@ from sqladmin.authentication import AuthenticationBackend
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.requests import Request
 from starlette.responses import RedirectResponse
+
+from app.api.auth_v1.validation_auth import validate_auth_user
 from app.api.user_v1.users_crud import crud_user
-from app.api.auth_v1 import validate_auth_user, token_crud
+from app.api.auth_v1 import validation_auth, token_crud
 from app.api.auth_v1.auth_jwt_router import auth_user_issue_jwt
 from app.api.auth_v1.auth_token_helpers import create_access_token, create_refresh_token
 from app.auth import decode_jwt

@@ -11,6 +11,7 @@ async def validate_auth_user(
     password: str = Form(),
     db: AsyncSession = Depends(db_helper.session_getter),
 ):
+    print(f"validate_auth_user: {username}, {password}")
     un_authed_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Неправильный логин или пароль.",
